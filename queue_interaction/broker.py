@@ -33,7 +33,6 @@ def connect() -> Iterator[pika.BlockingConnection]:
         yield connection
     finally:
         if connection.is_open:
-            # A failed close cannot undo a confirmed publication.
             with suppress(pika.exceptions.AMQPError, OSError):
                 connection.close()
 
@@ -82,17 +81,23 @@ def consume(
             with connect() as connection:
                 channel = connection.channel()
                 declare_queues(channel)
+
                 if confirms:
                     channel.confirm_delivery()
+
                 channel.basic_qos(prefetch_count=1)
                 channel.add_on_cancel_callback(on_cancel)
                 channel.basic_consume(queue, handler, auto_ack=False)
+
                 ready.set()
                 log.info("Consuming %s", queue)
+
                 while ready.is_set() and channel.is_open and not stop.is_set():
                     connection.process_data_events(time_limit=0.5)
+
         except (pika.exceptions.AMQPError, OSError) as error:
             log.warning("Consumer for %s disconnected: %s", queue, error)
         finally:
             ready.clear()
+
         stop.wait(1)

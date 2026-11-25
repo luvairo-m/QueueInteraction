@@ -22,6 +22,7 @@ def process_task(task: CsvCheckRequested, connection: pika.BlockingConnection) -
     result = check_csv(task.csv)
     log.info("Processing %s", task.id)
     connection.sleep(2.5)
+
     return JobCompleted(id=task.id, result=result, completed_at=datetime.now(timezone.utc))
 
 
@@ -35,6 +36,7 @@ def complete_task(
     log.info("Received %s redelivered=%s", task.id, delivery.redelivered)
     event_json = store.load(task.id)
     computed = event_json is None
+
     if event_json is None:
         completed = process_task(task, channel.connection)
         event_json = completed.model_dump_json(by_alias=True)
@@ -72,12 +74,15 @@ def handle_task(
 def main() -> None:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
     logging.getLogger("pika").setLevel(logging.WARNING)
+
     stop = Event()
     signal.signal(signal.SIGTERM, lambda *_: stop.set())
     signal.signal(signal.SIGINT, lambda *_: stop.set())
+
     result_dir = Path(os.environ.get("WORKER_RESULT_DIR", "/var/lib/queue-interaction/results"))
     pause_before_ack = float(os.environ.get("DEMO_PAUSE_BEFORE_ACK", "0"))
     handle = partial(handle_task, store=ResultStore(result_dir), pause_before_ack=pause_before_ack)
+
     consume(TASKS, handle, stop, Event(), confirms=True)
 
 

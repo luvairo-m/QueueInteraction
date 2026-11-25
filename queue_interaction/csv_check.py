@@ -19,6 +19,7 @@ class CsvCheckResult(BaseModel):
 
 def read_csv(text: str) -> tuple[list[str], Iterator[list[str]]]:
     reader = csv.reader(StringIO(text.removeprefix("\ufeff"), newline=""), strict=True)
+
     try:
         header_row = next((row for row in reader if row), [])
         headers = [cell.strip() for cell in header_row]
@@ -33,8 +34,10 @@ def read_csv(text: str) -> tuple[list[str], Iterator[list[str]]]:
             for row in reader:
                 if not row:
                     continue
+
                 if len(row) != len(headers):
                     raise CsvFormatError(f"CSV line {reader.line_num}: expected {len(headers)} fields")
+
                 yield row
         except csv.Error as error:
             raise CsvFormatError(f"Invalid CSV near line {reader.line_num}: {error}") from error
@@ -44,13 +47,18 @@ def read_csv(text: str) -> tuple[list[str], Iterator[list[str]]]:
 
 def check_csv(text: str) -> CsvCheckResult:
     headers, rows = read_csv(text)
+
     missing = dict.fromkeys(headers, 0)
     seen: set[tuple[str, ...]] = set()
+
     count = 0
+
     for row in rows:
         count += 1
         seen.add(tuple(row))
+
         for header, cell in zip(headers, row, strict=True):
             if not cell.strip():
                 missing[header] += 1
+
     return CsvCheckResult(rows=count, duplicate_rows=count - len(seen), missing_by_column=missing)

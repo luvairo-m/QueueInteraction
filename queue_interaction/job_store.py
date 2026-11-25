@@ -27,6 +27,7 @@ class JobStore:
     def complete(self, event: JobCompleted) -> None:
         with self._lock:
             current = self._jobs.get(event.id)
+
             if isinstance(current, JobAccepted):
                 self._jobs[event.id] = JobDone(id=event.id, result=event.result, completed_at=event.completed_at)
                 log.info("Saved result for %s", event.id)

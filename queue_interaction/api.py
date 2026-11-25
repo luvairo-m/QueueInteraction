@@ -45,12 +45,16 @@ def receive_result(
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     stop, ready = Event(), Event()
+
     jobs = JobStore()
     app.state.jobs = jobs
     app.state.results_ready = ready
+
     receive = partial(receive_result, jobs=jobs)
+
     consumer = Thread(target=consume, args=(RESULTS, receive, stop, ready), daemon=True)
     consumer.start()
+
     try:
         yield
     finally:
@@ -89,6 +93,7 @@ async def invalid_request(_request: Request, error: RequestValidationError) -> R
 def health(request: Request) -> dict[str, str]:
     if not request.app.state.results_ready.is_set():
         raise HTTPException(status_code=503, detail="Results consumer is not ready")
+
     return {"status": "ok"}
 
 
@@ -107,6 +112,7 @@ def create_job(payload: JobInput, request: Request, response: Response) -> JobAc
     except (pika.exceptions.AMQPError, OSError) as error:
         jobs.remove(task.id)
         log.warning("Could not confirm publication of %s: %s", task.id, error)
+
         raise HTTPException(status_code=503, detail="RabbitMQ publication could not be confirmed") from error
 
     response.headers["Location"] = f"/jobs/{task.id}"
@@ -117,6 +123,8 @@ def create_job(payload: JobInput, request: Request, response: Response) -> JobAc
 def get_job(job_id: UUID, request: Request) -> JobDone | JobAccepted:
     jobs: JobStore = request.app.state.jobs
     job = jobs.get(job_id)
+
     if job is None:
         raise HTTPException(status_code=404, detail="Job not found")
+
     return job
