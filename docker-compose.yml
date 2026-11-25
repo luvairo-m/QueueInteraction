@@ -1,0 +1,52 @@
+x-broker-environment: &broker-environment
+  RABBITMQ_HOST: rabbitmq
+  RABBITMQ_DEFAULT_USER: queue_demo
+  RABBITMQ_DEFAULT_PASS: queue_demo
+
+services:
+  rabbitmq:
+    image: rabbitmq:4.4.1-management
+    hostname: rabbitmq
+    environment: *broker-environment
+    ports:
+      - "127.0.0.1:15672:15672"
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "check_port_connectivity"]
+      interval: 3s
+      timeout: 5s
+      retries: 20
+
+  api:
+    build:
+      context: .
+      target: api
+    environment: *broker-environment
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:8000:8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "from urllib.request import urlopen; urlopen('http://localhost:8000/health', timeout=2).close()"]
+      interval: 2s
+      timeout: 3s
+      retries: 15
+
+  worker:
+    build:
+      context: .
+      target: worker
+    environment:
+      <<: *broker-environment
+      DEMO_PAUSE_BEFORE_ACK: ${DEMO_PAUSE_BEFORE_ACK:-0}
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    volumes:
+      - worker-results:/var/lib/queue-interaction/results
+
+volumes:
+  rabbitmq-data:
+  worker-results:

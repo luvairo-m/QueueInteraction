@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f7f6fc">
+  <title>CSV Lab — проверка CSV</title>
+  <link rel="stylesheet" href="/assets/styles.css">
+  <script type="module" src="/assets/demo.js"></script>
+</head>
+<body>
+  <header class="topbar">
+    <div class="shell topbar-inner">
+      <a class="brand" href="/" aria-label="CSV Lab, главная">
+        <span class="brand-icon" aria-hidden="true"><i></i><i></i><i></i></span>
+        CSV Lab
+      </a>
+      <nav aria-label="Инструменты">
+        <a href="/docs" target="_blank" rel="noopener">Swagger</a>
+        <a id="rabbitmq-link" href="http://localhost:15672/#/queues" target="_blank" rel="noopener">RabbitMQ <span class="external-icon" aria-hidden="true"></span></a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="shell">
+    <section class="intro" aria-labelledby="title">
+      <div>
+        <h1 id="title">Проверка <span>CSV</span></h1>
+        <p>Вставьте таблицу и посмотрите, как задача проходит через RabbitMQ. В результате будут строки, дубликаты и пропуски.</p>
+      </div>
+      <figure class="route" role="img" aria-label="Маршрут задачи. API отправляет задачу в Worker через очередь tasks. Worker возвращает результат в API через очередь results.">
+        <figcaption class="route-title" aria-hidden="true">Маршрут задачи</figcaption>
+        <div class="route-steps" aria-hidden="true">
+          <span class="route-node route-api">API</span>
+          <span class="route-lane route-outbound"><code>tasks</code></span>
+          <span class="route-lane route-return"><code>results</code></span>
+          <span class="route-node route-worker">Worker</span>
+        </div>
+      </figure>
+    </section>
+
+    <div class="workspace">
+      <section class="card" aria-labelledby="input-title">
+        <form id="csv-form" novalidate>
+          <div class="card-heading">
+            <span class="section-icon input-icon" aria-hidden="true"></span>
+            <div>
+              <h2 id="input-title"><label for="csv">Исходные данные</label></h2>
+              <p id="csv-hint">Первая строка — заголовки, разделитель — запятая.</p>
+            </div>
+          </div>
+
+          <div class="editor">
+            <div class="editor-bar" aria-hidden="true"><span>CSV</span><span>Текст</span></div>
+            <textarea id="csv" spellcheck="false" autocomplete="off" autocapitalize="off" maxlength="65536" aria-describedby="csv-hint" placeholder="name,email,city&#10;Ada,ada@example.com,London&#10;Linus,,Helsinki"></textarea>
+          </div>
+          <p id="input-error" class="input-error" role="alert" hidden></p>
+
+          <div class="form-actions">
+            <button id="submit" class="button primary" type="submit">Проверить CSV</button>
+            <button id="example" class="button secondary" type="button">Подставить пример</button>
+          </div>
+        </form>
+      </section>
+
+      <section class="card result-card" aria-labelledby="result-title">
+        <div class="card-heading">
+          <span class="section-icon result-icon" aria-hidden="true"></span>
+          <div><h2 id="result-title">Результат</h2><p>Обновляется автоматически</p></div>
+        </div>
+
+        <div id="job-state" class="job-state" data-state="idle" role="status" aria-atomic="true">
+          <div class="state-heading">
+            <span id="status-badge" class="status-badge">Ожидание</span>
+            <span id="response-time" class="response-time" hidden></span>
+          </div>
+          <p id="status-message">Отправьте CSV, чтобы запустить проверку.</p>
+          <div class="progress" aria-hidden="true"></div>
+        </div>
+
+        <dl class="metrics" aria-label="Сводка проверки">
+          <div><dt>Строки</dt><dd id="row-count">—</dd></div>
+          <div><dt>Дубликаты</dt><dd id="duplicate-count">—</dd></div>
+          <div><dt>Пропуски</dt><dd id="missing-count">—</dd></div>
+        </dl>
+
+        <div id="result-details" class="result-details" hidden>
+          <table>
+            <caption>Пропуски по колонкам</caption>
+            <thead><tr><th scope="col">Колонка</th><th scope="col">Пропуски</th></tr></thead>
+            <tbody id="column-results"></tbody>
+          </table>
+        </div>
+
+        <div id="job-meta" class="job-meta" hidden>
+          <span>ID задачи</span>
+          <a id="job-link" target="_blank" rel="noopener"></a>
+        </div>
+        <button id="retry" class="button secondary retry" type="button" hidden>Проверить статус</button>
+      </section>
+    </div>
+  </main>
+</body>
+</html>
