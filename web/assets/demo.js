@@ -47,7 +47,7 @@ function showInputError(message = "", invalidCsv = false) {
 function resetResult() {
   jobUrl = undefined;
   for (const element of [responseTime, jobMeta, resultDetails, retry]) element.hidden = true;
-  for (const counter of [rowCount, duplicateCount, missingCount]) counter.textContent = "—";
+  for (const counter of [rowCount, duplicateCount, missingCount]) counter.textContent = "-";
   columns.replaceChildren();
 }
 

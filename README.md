@@ -4,13 +4,7 @@
 
 ### Маршрут задачи
 
-```mermaid
-flowchart LR
-    api["Сервис A · API"] -->|"tasks · задача"| worker["Сервис B · Worker"]
-    worker -->|"results · результат"| api
-    linkStyle 0 stroke:#6542c1,stroke-width:2px
-    linkStyle 1 stroke:#1b705c,stroke-width:2px
-```
+![Маршрут задачи. API отправляет задачу через очередь tasks в Worker. Worker возвращает результат через очередь results в API.](docs/job-route.png)
 
 ## Запуск
 
@@ -20,9 +14,9 @@ flowchart LR
 docker compose up --build -d --wait
 ```
 
-- [CSV Lab](http://localhost:8000/) — демонстрационная страница проверки CSV.
+- [CSV Lab](http://localhost:8000/) - демонстрационная страница проверки CSV.
 - [Swagger UI](http://localhost:8000/docs) позволяет отправить запросы к API вручную.
-- [RabbitMQ Management](http://localhost:15672/#/queues) показывает очереди `tasks` и `results`. Логин и пароль — `queue_demo`.
+- [RabbitMQ Management](http://localhost:15672/#/queues) показывает очереди `tasks` и `results`. Логин и пароль - `queue_demo`.
 - `docker compose down` останавливает проект. Для следующего запуска используйте ту же команду запуска.
 
 ## Проверка в браузере
@@ -82,7 +76,7 @@ HTTP 202, 0.215 s
 }
 ```
 
-`202 Accepted` означает, что RabbitMQ подтвердил публикацию задачи. HTTP-запрос завершается до обработки, а заголовок `Location` указывает на адрес для проверки статуса. Некорректный CSV возвращает `422`, неизвестный UUID — `404`. При `503` публикация осталась без подтверждения. Повторный `POST` создаёт новый UUID.
+`202 Accepted` означает, что RabbitMQ подтвердил публикацию задачи. HTTP-запрос завершается до обработки, а заголовок `Location` указывает на адрес для проверки статуса. Некорректный CSV возвращает `422`, неизвестный UUID - `404`. При `503` публикация осталась без подтверждения. Повторный `POST` создаёт новый UUID.
 
 ## Что происходит при сбое
 
